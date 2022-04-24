@@ -1,6 +1,6 @@
 use actix_web::{
-    error::Error, error::InternalError, error::JsonPayloadError, error::PathError,
-    error::ResponseError, http::StatusCode, HttpRequest, HttpResponse,
+    dev, error::Error, error::JsonPayloadError, error::PathError, error::ResponseError,
+    http::StatusCode, HttpRequest, HttpResponse, Result,
 };
 use derive_more::{Display, Error};
 use serde::Serialize;
@@ -29,6 +29,7 @@ pub enum CustomError {
     NotFound,
 }
 
+// Implement function to return the error name
 impl CustomError {
     fn name(&self) -> String {
         match self {
@@ -63,18 +64,19 @@ impl ResponseError for CustomError {
 }
 
 // Custom JSON error handler for the JSON deserialization
-// TODO: See if this can be made to work with the CustomerError type
-pub fn json_error_handler(err: JsonPayloadError, _req: &HttpRequest) -> Error {
-    InternalError::from_response(err, HttpResponse::BadRequest().json("Invalid JSON payload"))
-        .into()
+// TODO: See if a user friendly version of the exact error can be generated (E.g. invalid type: string "1", expected u32)
+pub fn json_error_handler(_err: JsonPayloadError, _req: &HttpRequest) -> Error {
+    // InternalError::from_response(err, HttpResponse::BadRequest().json("Invalid JSON payload"))
+    //     .into()
+    CustomError::BadClientData.into()
 }
 
 // Custom Path error handler for when the provided type in the URL does not match the expected type
-// TODO: See if this can be made to work with the CustomerError type
-pub fn path_error_handler(err: PathError, _req: &HttpRequest) -> Error {
-    InternalError::from_response(
-        err,
-        HttpResponse::BadRequest().json("Invalid path parameter"),
-    )
-    .into()
+pub fn path_error_handler(_err: PathError, _req: &HttpRequest) -> Error {
+    // InternalError::from_response(
+    //     err,
+    //     HttpResponse::BadRequest().json("Invalid path parameter"),
+    // )
+    // .into()
+    CustomError::BadClientData.into()
 }
