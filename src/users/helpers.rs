@@ -1,3 +1,4 @@
+use crate::diesel::QueryDsl;
 use crate::diesel::RunQueryDsl;
 use crate::errors::handlers::CustomError;
 use crate::schema::users::dsl::*;
@@ -10,6 +11,12 @@ pub fn get_all_users_helper(pool: web::Data<Pool>) -> Result<Vec<User>, CustomEr
     let conn = pool.get().unwrap();
     let items = users.load::<User>(&conn)?;
     Ok(items)
+}
+
+pub fn get_single_user(pool: web::Data<Pool>, user_id: i32) -> Result<User, CustomError> {
+    let conn = pool.get().unwrap();
+    let user = users.find(user_id).get_result::<User>(&conn)?;
+    Ok(user)
 }
 
 // Function that takes a DB connection and a JSON payload and inserts it into the database

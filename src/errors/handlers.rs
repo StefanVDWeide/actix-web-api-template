@@ -1,4 +1,4 @@
-// TODO: Possibly implement a "new function" as seen here: https://github.com/iamhabbeboy/rest-api-actix-web/blob/master/src/error_handler.rs
+// TODO: Possibly refactor as seen here: https://github.com/iamhabbeboy/rest-api-actix-web/blob/master/src/error_handler.rs
 
 use actix_web::{
     error::Error, error::JsonPayloadError, error::PathError, error::ResponseError,
