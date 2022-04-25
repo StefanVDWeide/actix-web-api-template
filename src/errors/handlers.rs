@@ -1,8 +1,11 @@
+// TODO: Possibly implement a "new function" as seen here: https://github.com/iamhabbeboy/rest-api-actix-web/blob/master/src/error_handler.rs
+
 use actix_web::{
-    dev, error::Error, error::JsonPayloadError, error::PathError, error::ResponseError,
-    http::StatusCode, HttpRequest, HttpResponse, Result,
+    error::Error, error::JsonPayloadError, error::PathError, error::ResponseError,
+    http::StatusCode, HttpRequest, HttpResponse,
 };
 use derive_more::{Display, Error};
+use diesel::result::Error as DieselError;
 use serde::Serialize;
 
 // Struct which defines the structure of the error response
@@ -14,7 +17,7 @@ struct FormattedErrorResponse {
 }
 
 // Custom data type for the error response
-#[derive(Debug, Display, Error)]
+#[derive(Debug, Display, Error, Serialize)]
 pub enum CustomError {
     // Formatting the validation error message
     #[display(fmt = "Validation error on field: {}", field)]
@@ -63,20 +66,24 @@ impl ResponseError for CustomError {
     }
 }
 
+// Implementation of diesel errors in order to use the custom type for routes that interact with the database
+impl From<DieselError> for CustomError {
+    fn from(error: DieselError) -> CustomError {
+        match error {
+            DieselError::DatabaseError(_, _err) => CustomError::InternalError,
+            DieselError::NotFound => CustomError::NotFound,
+            _err => CustomError::InternalError,
+        }
+    }
+}
+
 // Custom JSON error handler for the JSON deserialization
 // TODO: See if a user friendly version of the exact error can be generated (E.g. invalid type: string "1", expected u32)
 pub fn json_error_handler(_err: JsonPayloadError, _req: &HttpRequest) -> Error {
-    // InternalError::from_response(err, HttpResponse::BadRequest().json("Invalid JSON payload"))
-    //     .into()
     CustomError::BadClientData.into()
 }
 
 // Custom Path error handler for when the provided type in the URL does not match the expected type
 pub fn path_error_handler(_err: PathError, _req: &HttpRequest) -> Error {
-    // InternalError::from_response(
-    //     err,
-    //     HttpResponse::BadRequest().json("Invalid path parameter"),
-    // )
-    // .into()
     CustomError::BadClientData.into()
 }
