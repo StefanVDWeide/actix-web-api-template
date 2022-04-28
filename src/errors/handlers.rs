@@ -1,89 +1,66 @@
-// TODO: Possibly refactor as seen here: https://github.com/iamhabbeboy/rest-api-actix-web/blob/master/src/error_handler.rs
-
 use actix_web::{
     error::Error, error::JsonPayloadError, error::PathError, error::ResponseError,
     http::StatusCode, HttpRequest, HttpResponse,
 };
-use derive_more::{Display, Error};
 use diesel::result::Error as DieselError;
 use serde::Serialize;
+use serde_json::json;
+use std::fmt;
 
-// Struct which defines the structure of the error response
-#[derive(Serialize)]
-struct FormattedErrorResponse {
-    status_code: u16,
-    error: String,
-    message: String,
+#[derive(Serialize, Debug)]
+pub struct CustomError {
+    pub error_status_code: u16,
+    pub error_message: String,
 }
 
-// Custom data type for the error response
-#[derive(Debug, Display, Error, Serialize)]
-pub enum CustomError {
-    // Formatting the validation error message
-    #[display(fmt = "Validation error on field: {}", field)]
-    ValidationError { field: String },
-    // Formatting the internatal server error error message
-    #[display(fmt = "An internal error occurred. Please try again later.")]
-    InternalError,
-    // Formatting the bad request error message
-    #[display(fmt = "Bad request")]
-    BadClientData,
-    #[display(fmt = "Not found!")]
-    NotFound,
-}
-
-// Implement function to return the error name
 impl CustomError {
-    fn name(&self) -> String {
-        match self {
-            CustomError::ValidationError { .. } => "Validation Error".to_string(),
-            CustomError::InternalError => "Internal Server Error".to_string(),
-            CustomError::BadClientData => "Bad request".to_string(),
-            CustomError::NotFound => "Not found".to_string(),
+    pub fn new(error_status_code: u16, error_message: String) -> CustomError {
+        CustomError {
+            error_status_code,
+            error_message,
         }
     }
 }
 
-// Implement ResponseError trait for the custom struct
-impl ResponseError for CustomError {
-    // Function to generate the error response
-    fn error_response(&self) -> HttpResponse {
-        let error_response = FormattedErrorResponse {
-            status_code: self.status_code().as_u16(),
-            error: self.to_string(),
-            message: self.name(),
-        };
-        HttpResponse::build(self.status_code()).json(error_response)
-    }
-    // Function to generate the error code
-    fn status_code(&self) -> StatusCode {
-        match *self {
-            CustomError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
-            CustomError::ValidationError { .. } => StatusCode::BAD_REQUEST,
-            CustomError::BadClientData => StatusCode::BAD_REQUEST,
-            CustomError::NotFound => StatusCode::NOT_FOUND,
-        }
+impl fmt::Display for CustomError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str(self.error_message.as_str())
     }
 }
 
-// Implementation of diesel errors in order to use the custom type for routes that interact with the database
 impl From<DieselError> for CustomError {
     fn from(error: DieselError) -> CustomError {
         match error {
-            DieselError::DatabaseError(_, _err) => CustomError::InternalError,
-            DieselError::NotFound => CustomError::NotFound,
-            _err => CustomError::InternalError,
+            DieselError::DatabaseError(_, err) => CustomError::new(409, err.message().to_string()),
+            DieselError::NotFound => CustomError::new(404, "The record not found".to_string()),
+            err => CustomError::new(500, format!("Unknown Diesel error: {}", err)),
         }
+    }
+}
+
+impl ResponseError for CustomError {
+    fn error_response(&self) -> HttpResponse {
+        let status_code = match StatusCode::from_u16(self.error_status_code) {
+            Ok(status_code) => status_code,
+            Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        };
+
+        let error_message = match status_code.as_u16() < 500 {
+            true => self.error_message.clone(),
+            false => "Internal server error".to_string(),
+        };
+
+        HttpResponse::build(status_code).json(json!({ "message": error_message }))
     }
 }
 
 // Custom JSON error handler for the JSON deserialization
 // TODO: See if a user friendly version of the exact error can be generated (E.g. invalid type: string "1", expected u32)
 pub fn json_error_handler(_err: JsonPayloadError, _req: &HttpRequest) -> Error {
-    CustomError::BadClientData.into()
+    CustomError::new(400, format!("Invalid JSON payload")).into()
 }
 
 // Custom Path error handler for when the provided type in the URL does not match the expected type
 pub fn path_error_handler(_err: PathError, _req: &HttpRequest) -> Error {
-    CustomError::BadClientData.into()
+    CustomError::new(400, format!("Invalid URL path variables")).into()
 }

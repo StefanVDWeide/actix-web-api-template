@@ -44,6 +44,7 @@ async fn main() -> std::io::Result<()> {
             .service(users::get_user)
             .service(users::get_all_users)
             .service(users::post_user)
+            .service(users::deleter_user)
     })
     .bind(("127.0.0.1", 8080))?
     .run()
