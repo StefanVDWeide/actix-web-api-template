@@ -9,6 +9,7 @@ use actix_web::{web, App, HttpServer};
 use env_logger::Env;
 
 mod errors;
+mod posts;
 mod schema;
 mod users;
 
@@ -44,7 +45,12 @@ async fn main() -> std::io::Result<()> {
             .service(users::get_user)
             .service(users::get_all_users)
             .service(users::post_user)
-            .service(users::deleter_user)
+            .service(users::delete_user)
+            .service(posts::get_all_posts)
+            .service(posts::get_single_post)
+            .service(posts::get_all_posts_by_user)
+            .service(posts::post_new_post)
+            .service(posts::delete_single_post)
     })
     .bind(("127.0.0.1", 8080))?
     .run()

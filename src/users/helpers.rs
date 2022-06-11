@@ -1,4 +1,3 @@
-// use crate::diesel::QueryDsl;
 use crate::diesel::RunQueryDsl;
 use crate::errors::handlers::CustomError;
 use crate::schema::users::dsl::*;

@@ -53,7 +53,7 @@ async fn post_user(
 }
 
 #[delete("/delete/user/{id}")]
-async fn deleter_user(
+async fn delete_user(
     db: web::Data<Pool>,
     req: web::Path<i32>,
 ) -> Result<HttpResponse, CustomError> {
