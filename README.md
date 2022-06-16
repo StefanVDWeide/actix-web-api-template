@@ -42,8 +42,9 @@ cargo build
 
 [Install PostgreSQL on Mac](https://www.robinwieruch.de/postgres-sql-macos-setup/)
 
-`pg_ctl -D /usr/local/var/postgres start`
-`pg_ctl -D /usr/local/var/postgres stop`
+Start the database by running the following command: `pg_ctl -D /usr/local/var/postgres start`
+
+When you are finished, you can stop the database by running: `pg_ctl -D /usr/local/var/postgres stop`
 
 ### Migrations
 TODO
