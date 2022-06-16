@@ -9,6 +9,7 @@ use actix_web::{web, App, HttpServer};
 use env_logger::Env;
 
 mod errors;
+mod helpers;
 mod posts;
 mod schema;
 mod users;
