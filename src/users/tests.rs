@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::helpers::test_app_factory;
+    use crate::users::models::JsonInputUser;
     use crate::users::{delete_user, get_all_users, get_user, post_user};
     use actix_web::{test, App};
 
@@ -14,7 +15,6 @@ mod tests {
         .await;
         let req = test::TestRequest::get().uri("/get/users").to_request();
         let resp = test::call_service(&app, req).await;
-        println!("{:?}", resp);
         assert!(resp.status().is_success());
     }
 
@@ -24,7 +24,6 @@ mod tests {
             test::init_service(App::new().configure(test_app_factory).service(get_user)).await;
         let req = test::TestRequest::get().uri("/get/user/1").to_request();
         let resp = test::call_service(&app, req).await;
-        println!("{:?}", resp);
         assert!(resp.status().is_client_error());
     }
 
@@ -32,10 +31,17 @@ mod tests {
     async fn test_post_user() {
         let app =
             test::init_service(App::new().configure(test_app_factory).service(post_user)).await;
-        let req = test::TestRequest::post().uri("/post/users").to_request();
+        let payload = JsonInputUser {
+            first_name: "Test".to_string(),
+            last_name: "Test".to_string(),
+            email: "test@test.com".to_string(),
+        };
+        let req = test::TestRequest::post()
+            .set_json(&payload)
+            .uri("/post/user")
+            .to_request();
         let resp = test::call_service(&app, req).await;
-        println!("{:?}", resp);
-        assert!(resp.status().is_client_error());
+        assert!(resp.status().is_success());
     }
 
     #[actix_web::test]
@@ -44,7 +50,6 @@ mod tests {
             test::init_service(App::new().configure(test_app_factory).service(delete_user)).await;
         let req = test::TestRequest::post().uri("/delete/user/1").to_request();
         let resp = test::call_service(&app, req).await;
-        println!("{:?}", resp);
         assert!(resp.status().is_client_error());
     }
 }

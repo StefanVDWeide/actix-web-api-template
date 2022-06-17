@@ -72,7 +72,7 @@ async fn post_new_post(
     }
 }
 
-#[delete("/delete/user/{id}")]
+#[delete("/delete/post/{id}")]
 async fn delete_single_post(
     db: web::Data<Pool>,
     req: web::Path<i32>,
